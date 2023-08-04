@@ -5,8 +5,21 @@ on:
     branches:
       - main
       - master
+  schedule:
+    - cron: "0 */12 * * *"
+    # You can adjust the cron schedule to your preferred frequency
+    # This example runs the job daily at midnight (00:00 UTC)
 
 jobs:
+  get-latest-runner-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the latest runner version
+        id: get_latest_version
+        run: |
+          LATEST_VERSION=$(curl -sL https://api.github.com/repos/actions/runner/releases/latest | jq -r '.tag_name' | cut -d "v" -f 2)
+          echo "LATEST_VERSION=${LATEST_VERSION}" >> $GITHUB_ENV
+
   publish-github-runner:
     runs-on: ubuntu-latest
     steps:
@@ -15,13 +28,13 @@ jobs:
 
       - name: Build the github-runner Docker image
         run: |
-          docker build --build-arg RUNNER_VERSION=2.307.1 --tag ghcr.io/zerka30/github-runner:latest .
-
-      - name: Start the github-runner container
-        run: |
-          docker run ghcr.io/zerka30/github-runner:latest
+          docker build --build-arg RUNNER_VERSION=${{ env.LATEST_VERSION }} --tag ghcr.io/zerka30/github-runner:latest .
 
       - name: Push Docker image to GitHub Container Registry
         run: |
           echo ${{ secrets.GH_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           docker push ghcr.io/zerka30/github-runner:latest
+
+      - name: Start the github-runner container
+        run: |
+          docker run ghcr.io/zerka30/github-runner:latest
