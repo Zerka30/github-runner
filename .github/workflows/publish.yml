@@ -30,11 +30,11 @@ jobs:
         run: |
           docker build --build-arg RUNNER_VERSION=${{ env.LATEST_VERSION }} --tag ghcr.io/zerka30/github-runner:latest .
 
+      - name: Start the github-runner container
+        run: |
+          docker run ghcr.io/zerka30/github-runner:latest
+
       - name: Push Docker image to GitHub Container Registry
         run: |
           echo ${{ secrets.GH_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           docker push ghcr.io/zerka30/github-runner:latest
-
-      - name: Start the github-runner container
-        run: |
-          docker run ghcr.io/zerka30/github-runner:latest
